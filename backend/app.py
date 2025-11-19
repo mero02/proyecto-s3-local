@@ -4,7 +4,9 @@ from botocore.exceptions import ClientError
 import os
 
 # Inicializamos la aplicación Flask
-app = Flask(__name__)
+app = Flask(__name__,
+    template_folder='frontend/templates',
+    static_folder='frontend/static')
 
 # ---------------------------------------
 # Configuración para usar S3 en LocalStack
