@@ -21,10 +21,10 @@ BUCKET_NAME = 'mi-bucket-local'
 # Cliente S3 configurado para apuntar a LocalStack
 s3_client = boto3.client(
     's3',
-    endpoint_url=LOCALSTACK_ENDPOINT,  # Se conecta a LocalStack y no a AWS real
-    aws_access_key_id='test',          # LocalStack acepta cualquier credencial
+    endpoint_url=LOCALSTACK_ENDPOINT,   # Se conecta a LocalStack y no a AWS real
+    aws_access_key_id='test',           # LocalStack acepta cualquier credencial
     aws_secret_access_key='test',
-    region_name='us-east-1'            # Región estándar
+    region_name='us-east-1'             # Región estándar
 )
 
 # ------------------------------------------------
@@ -81,30 +81,34 @@ def upload_file():
 @app.route('/files', methods=['GET'])
 def list_files():
     try:
-        # Aseguramos que el bucket exista
+        page = int(request.args.get('page', 1))
+        per_page = int(request.args.get('per_page', 10))
         create_bucket_if_not_exists()
-
-        # Pedimos la lista de objetos almacenados
         response = s3_client.list_objects_v2(Bucket=BUCKET_NAME)
-
-        files = []
-
-        # Si el bucket tiene archivos, estarán en 'Contents'
+        all_files = []
         if 'Contents' in response:
             for obj in response['Contents']:
-                files.append({
+                all_files.append({
                     'key': obj['Key'],
                     'size': obj['Size'],
                     'last_modified': obj['LastModified'].isoformat()
                 })
 
-        return jsonify(files), 200
+        total_files = len(all_files)
+        total_pages = (total_files + per_page - 1) // per_page
+        start = (page - 1) * per_page
+        end = start + per_page
+        files = all_files[start:end]
 
+        return jsonify({
+            'files': files,
+            'page': page,
+            'per_page': per_page,
+            'total_files': total_files,
+            'total_pages': total_pages
+        }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# ----------------------------------------
-# Ejecución de la aplicación Flask
-# ----------------------------------------
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

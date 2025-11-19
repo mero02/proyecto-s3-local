@@ -7,92 +7,76 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-
     <div class="container">
         <h1>Simulación de Amazon S3 Local</h1>
-        <!-- Seccion para subir archivos -->
-        <div class="upload-section">
-            <h2>Subir Archivo</h2>
-            <!-- Formulario de subida -->
-            <form id="uploadForm" enctype="multipart/form-data">
-                <input type="file" id="fileInput" name="file" required>
-                <button type="submit">Subir Archivo</button>
-            </form>
-            <!-- mensaje de exito o error -->
-            <div id="uploadMessage"></div>
-        </div>
 
-        <!-- Seccion para listar los archivos del bucket S3 local -->
-        <div class="files-section">
-            <h2>Archivos en el Bucket</h2>
-            <button id="refreshBtn">Actualizar Lista</button>
-            <div id="filesList"></div>
+        <div class="main-content">
+            <div class="upload-section">
+                <h2>Subir Archivo</h2>
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <input type="file" id="fileInput" name="file" required>
+                    <button type="submit">Subir Archivo</button>
+                </form>
+                <div id="uploadMessage"></div>
+            </div>
+
+            <div class="files-section">
+                <h2>Archivos en el Bucket</h2>
+                <button id="refreshBtn">Actualizar Lista</button>
+                <div id="filesList"></div>
+                <div id="pagination"></div>
+            </div>
         </div>
     </div>
 
     <script>
-        // -----------------------------
-        // Referencias a elementos HTML
-        // -----------------------------
         const uploadForm = document.getElementById('uploadForm');
         const fileInput = document.getElementById('fileInput');
         const uploadMessage = document.getElementById('uploadMessage');
         const refreshBtn = document.getElementById('refreshBtn');
         const filesList = document.getElementById('filesList');
+        const pagination = document.getElementById('pagination');
 
-        // -------------------------------------
-        // Evento: cuando el usuario sube un archivo
-        // -------------------------------------
+        let currentPage = 1;
+        const perPage = 5;
+
         uploadForm.addEventListener('submit', async (e) => {
-            e.preventDefault();  // Evita que el formulario recargue la pagina
-
+            e.preventDefault();
             const formData = new FormData();
-            formData.append('file', fileInput.files[0]); 
+            formData.append('file', fileInput.files[0]);
 
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-
                 const result = await response.json();
-
-                // Si la subida fue exitosa
                 if (response.ok) {
                     uploadMessage.innerHTML = '<p class="success">' + result.message + '</p>';
-
-                    fileInput.value = ''; // Limpia el input de archivo
-
-                    loadFiles(); // Recarga la lista de archivos
+                    fileInput.value = '';
+                    loadFiles(currentPage);
                 } else {
-                    // Si hay error del backend
                     uploadMessage.innerHTML = '<p class="error">' + result.error + '</p>';
                 }
-
             } catch (error) {
                 uploadMessage.innerHTML = '<p class="error">Error al subir el archivo</p>';
             }
         });
 
-        refreshBtn.addEventListener('click', loadFiles);
+        refreshBtn.addEventListener('click', () => loadFiles(currentPage));
 
-        // -------------------------------------
-        // Función para cargar la lista de archivos desde /files
-        // -------------------------------------
-        async function loadFiles() {
+        async function loadFiles(page = 1) {
             try {
-                const response = await fetch('/files'); 
-                const files = await response.json();
-
+                const response = await fetch(`/files?page=${page}&per_page=${perPage}`);
+                const data = await response.json();
                 if (response.ok) {
-
-                    // Si no hay archivos
+                    currentPage = data.page;
+                    const files = data.files;
                     if (files.length === 0) {
                         filesList.innerHTML = '<p>No hay archivos en el bucket</p>';
+                        pagination.innerHTML = '';
                     } else {
-                        // Crea una tabla dinámica con los archivos
                         const table = document.createElement('table');
-
                         table.innerHTML = `
                             <thead>
                                 <tr>
@@ -111,22 +95,58 @@
                                 `).join('')}
                             </tbody>
                         `;
-
-                        // Limpia contenido previo y agrega la nueva tabla
                         filesList.innerHTML = '';
                         filesList.appendChild(table);
+
+                        // Paginación
+                        renderPagination(data.total_pages, data.page);
                     }
-
                 } else {
-                    filesList.innerHTML = '<p class="error">' + files.error + '</p>';
+                    filesList.innerHTML = '<p class="error">' + data.error + '</p>';
+                    pagination.innerHTML = '';
                 }
-
             } catch (error) {
                 filesList.innerHTML = '<p class="error">Error al cargar los archivos</p>';
+                pagination.innerHTML = '';
             }
         }
 
-        // Cargar la lista automaticamente al iniciar la pagina
+        function renderPagination(totalPages, currentPage) {
+            pagination.innerHTML = '';
+            if (totalPages <= 1) return;
+
+            const paginationDiv = document.createElement('div');
+            paginationDiv.className = 'pagination-controls';
+
+            // Anterior
+            if (currentPage > 1) {
+                const prevBtn = document.createElement('button');
+                prevBtn.textContent = 'Anterior';
+                prevBtn.onclick = () => loadFiles(currentPage - 1);
+                paginationDiv.appendChild(prevBtn);
+            }
+
+            // Páginas
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.textContent = i;
+                pageBtn.className = i === currentPage ? 'active' : '';
+                pageBtn.onclick = () => loadFiles(i);
+                paginationDiv.appendChild(pageBtn);
+            }
+
+            // Siguiente
+            if (currentPage < totalPages) {
+                const nextBtn = document.createElement('button');
+                nextBtn.textContent = 'Siguiente';
+                nextBtn.onclick = () => loadFiles(currentPage + 1);
+                paginationDiv.appendChild(nextBtn);
+            }
+
+            pagination.appendChild(paginationDiv);
+        }
+
+        // Cargar archivos al iniciar
         loadFiles();
     </script>
 </body>
