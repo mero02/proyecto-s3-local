@@ -24,3 +24,6 @@ services:
       - localstack
     environment:
       - LOCALSTACK_ENDPOINT=http://localstack:4566
+    volumes:
+      - ./backend:/app
+      - ./frontend:/app/frontend
