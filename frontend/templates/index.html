@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulación S3 Local</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Simulación de Amazon S3 Local</h1>
+        <!-- Seccion para subir archivos -->
+        <div class="upload-section">
+            <h2>Subir Archivo</h2>
+            <!-- Formulario de subida -->
+            <form id="uploadForm" enctype="multipart/form-data">
+                <input type="file" id="fileInput" name="file" required>
+                <button type="submit">Subir Archivo</button>
+            </form>
+            <!-- mensaje de exito o error -->
+            <div id="uploadMessage"></div>
+        </div>
+
+        <!-- Seccion para listar los archivos del bucket S3 local -->
+        <div class="files-section">
+            <h2>Archivos en el Bucket</h2>
+            <button id="refreshBtn">Actualizar Lista</button>
+            <div id="filesList"></div>
+        </div>
+    </div>
+
+    <script>
+        // -----------------------------
+        // Referencias a elementos HTML
+        // -----------------------------
+        const uploadForm = document.getElementById('uploadForm');
+        const fileInput = document.getElementById('fileInput');
+        const uploadMessage = document.getElementById('uploadMessage');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const filesList = document.getElementById('filesList');
+
+        // -------------------------------------
+        // Evento: cuando el usuario sube un archivo
+        // -------------------------------------
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();  // Evita que el formulario recargue la pagina
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]); 
+
+            try {
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                // Si la subida fue exitosa
+                if (response.ok) {
+                    uploadMessage.innerHTML = '<p class="success">' + result.message + '</p>';
+
+                    fileInput.value = ''; // Limpia el input de archivo
+
+                    loadFiles(); // Recarga la lista de archivos
+                } else {
+                    // Si hay error del backend
+                    uploadMessage.innerHTML = '<p class="error">' + result.error + '</p>';
+                }
+
+            } catch (error) {
+                uploadMessage.innerHTML = '<p class="error">Error al subir el archivo</p>';
+            }
+        });
+
+        refreshBtn.addEventListener('click', loadFiles);
+
+        // -------------------------------------
+        // Función para cargar la lista de archivos desde /files
+        // -------------------------------------
+        async function loadFiles() {
+            try {
+                const response = await fetch('/files'); 
+                const files = await response.json();
+
+                if (response.ok) {
+
+                    // Si no hay archivos
+                    if (files.length === 0) {
+                        filesList.innerHTML = '<p>No hay archivos en el bucket</p>';
+                    } else {
+                        // Crea una tabla dinámica con los archivos
+                        const table = document.createElement('table');
+
+                        table.innerHTML = `
+                            <thead>
+                                <tr>
+                                    <th>Nombre del Archivo</th>
+                                    <th>Tamaño (bytes)</th>
+                                    <th>Última Modificación</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${files.map(file => `
+                                    <tr>
+                                        <td>${file.key}</td>
+                                        <td>${file.size}</td>
+                                        <td>${new Date(file.last_modified).toLocaleString()}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        `;
+
+                        // Limpia contenido previo y agrega la nueva tabla
+                        filesList.innerHTML = '';
+                        filesList.appendChild(table);
+                    }
+
+                } else {
+                    filesList.innerHTML = '<p class="error">' + files.error + '</p>';
+                }
+
+            } catch (error) {
+                filesList.innerHTML = '<p class="error">Error al cargar los archivos</p>';
+            }
+        }
+
+        // Cargar la lista automaticamente al iniciar la pagina
+        loadFiles();
+    </script>
+</body>
+</html>
