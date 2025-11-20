@@ -38,3 +38,4 @@ Este proyecto simula un servicio de almacenamiento Amazon S3 localmente utilizan
 ## Notas
 - LocalStack simula S3 localmente para desarrollo.
 - El bucket se crea automáticamente si no existe.
+- **Limitación de Persistencia**: En la versión gratuita de LocalStack, los datos no persisten entre reinicios de contenedores. Para persistencia permanente, hay que considerar LocalStack Pro.

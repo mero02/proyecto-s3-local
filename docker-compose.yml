@@ -1,6 +1,17 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_DB: localstack
+      POSTGRES_USER: localstack
+      POSTGRES_PASSWORD: localstack
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
   localstack:
     image: localstack/localstack:3.0
     ports:
@@ -12,9 +23,13 @@ services:
       - PERSISTENCE=1
       - S3_DATA_PATH=/opt/localstack/data
       - DOCKER_HOST=unix:///var/run/docker.sock
+      - PERSISTENCE_DB_URL=postgresql://localstack:localstack@postgres:5432/localstack
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
       - ./localstack-data:/opt/localstack/data
+      - ./localstack-s3-data:/tmp/localstack-s3-storage
+    depends_on:
+      - postgres
 
   app:
     build: .
@@ -27,3 +42,6 @@ services:
     volumes:
       - ./backend:/app
       - ./frontend:/app/frontend
+
+volumes:
+  postgres_data:

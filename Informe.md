@@ -9,7 +9,7 @@ Este proyecto implementa un servicio local que simula Amazon S3 utilizando Local
 - **Contenerización Completa:** Tanto el backend como el frontend están contenerizados, permitiendo despliegue con un solo comando `docker-compose up -d`.
 - **Layout Mejorado:** Interfaz de dos columnas (subida izquierda, lista derecha).
 - **Paginación:** Lista de archivos paginada para manejar grandes cantidades de archivos eficientemente.
-- **Persistencia Limitada:** Metadatos de S3 persisten entre reinicios, aunque los archivos binarios no (limitación de LocalStack).
+- **Persistencia Limitada:** Los datos no persisten entre reinicios completos de contenedores (limitación de LocalStack gratuita).
 
 ## Tecnologías Utilizadas
 
@@ -39,6 +39,44 @@ Este proyecto implementa un servicio local que simula Amazon S3 utilizando Local
 
 ---
 ---
+## Pruebas de Persistencia Realizadas
+
+Durante el desarrollo del proyecto, realizamos pruebas exhaustivas para verificar la persistencia de datos en LocalStack.
+
+### Fase 1: Configuración Inicial de Persistencia
+- Implementamos volúmenes bind mount en `docker-compose.yml` para montar `./localstack-data` en `/opt/localstack/data`.
+- Configuramos las variables de entorno `PERSISTENCE=1` y `DATA_DIR=/opt/localstack/data`.
+- Levantamos los servicios y subimos archivos de prueba para verificar funcionamiento básico.
+
+### Fase 2: Pruebas de Reinicio Básico
+- Reiniciamos los contenedores con `docker-compose restart`.
+- Verificamos que los archivos subidos seguían accesibles vía la API.
+- Resultado: Los archivos persistían durante la sesión, pero se perdían al detener completamente los contenedores.
+
+### Fase 3: Investigación de Almacenamiento Interno
+- Inspeccionamos el sistema de archivos del contenedor LocalStack.
+- Descubrimos que los archivos S3 se almacenan en `/tmp/localstack-s3-storage/bucket/key`.
+- Intentamos montar este directorio con volúmenes adicionales (`./localstack-s3-data:/tmp/localstack-s3-storage`).
+- Resultado: El bucket se creaba en el host, pero los archivos no se guardaban físicamente.
+
+### Fase 4: Implementación de Base de Datos Externa
+- Agreguamos PostgreSQL como servicio en `docker-compose.yml`.
+- Configuramos `PERSISTENCE_DB_URL` para que LocalStack use la DB externa.
+- Levantamos los servicios con la nueva configuración.
+- Verificamos si se creaban tablas en PostgreSQL.
+- Resultado: PostgreSQL funcionaba, pero LocalStack no utilizaba la DB; no se crearon tablas ni se guardaron datos.
+
+### Resultados Finales de las Pruebas
+- **Subida de Archivos**: Funciona correctamente durante la sesión activa.
+- **Persistencia de Metadatos**: No se mantiene entre reinicios completos.
+- **Persistencia de Archivos**: Los archivos no sobreviven a `docker-compose down`.
+- **Base de Datos**: No se utiliza por LocalStack en esta configuración.
+
+### Conclusión Personal
+LocalStack versión 3.0 gratuita tiene limitaciones importantes en persistencia. Para un laboratorio académico como este, es suficiente para testing en sesiones activas, pero no garantiza persistencia permanente. Para producción o persistencia real, recomendaría LocalStack Pro.
+
+---
+
 
 
 ## Guía Paso a Paso
