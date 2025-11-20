@@ -70,7 +70,7 @@ def upload_file():
         # Subimos el archivo a S3 (LocalStack)
         s3_client.upload_fileobj(file, BUCKET_NAME, file.filename)
 
-        return jsonify({'message': f'File {file.filename} uploaded successfully'}), 200
+        return jsonify({'message': f'Archivo {file.filename} cargado exitosamente'}), 200
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

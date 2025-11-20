@@ -72,7 +72,7 @@ Durante el desarrollo del proyecto, realizamos pruebas exhaustivas para verifica
 - **Persistencia de Archivos**: Los archivos no sobreviven a `docker-compose down`.
 - **Base de Datos**: No se utiliza por LocalStack en esta configuración.
 
-### Conclusión Personal
+### Conclusión
 LocalStack versión 3.0 gratuita tiene limitaciones importantes en persistencia. Para un laboratorio académico como este, es suficiente para testing en sesiones activas, pero no garantiza persistencia permanente. Para producción o persistencia real, recomendaría LocalStack Pro.
 
 ---
@@ -90,7 +90,7 @@ LocalStack versión 3.0 gratuita tiene limitaciones importantes en persistencia.
 1. **Clonar/Descargar el proyecto:**
    ```bash
    # Si está en un repositorio git
-   git clone https://gitlab.com/gastonmura/sd2025-lab3.git
+   git clone git@github.com:mero02/proyecto-s3-local.git
    cd proyecto
     ```
 2. **Verificar estructura de archivos:**
