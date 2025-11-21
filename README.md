@@ -7,7 +7,7 @@ Este proyecto simula un servicio de almacenamiento Amazon S3 localmente utilizan
 - **Backend**: Python 3.9, Flask, boto3
 - **Frontend**: HTML5, CSS3, JavaScript
 - **Contenedorización**: Docker, Docker Compose
-- **Simulación S3**: LocalStack 3.0
+- **Simulación S3**: LocalStack con gresau/localstack-persist
 
 ## Estructura del Proyecto
 - `backend/`: Código del servidor Flask
@@ -28,7 +28,7 @@ Este proyecto simula un servicio de almacenamiento Amazon S3 localmente utilizan
 ## Uso
 - Sube archivos utilizando el formulario en la página principal.
 - Lista los archivos subidos en la tabla, con paginación.
-- Los datos se persisten en el directorio `localstack-data`.
+- Los datos se persisten en los directorios `localstack-data` y `localstack-s3-data` usando gresau/localstack-persist.
 
 ## Funcionalidades
 - Subida de archivos al bucket S3 simulado.
@@ -36,6 +36,6 @@ Este proyecto simula un servicio de almacenamiento Amazon S3 localmente utilizan
 - Interfaz web responsiva.
 
 ## Notas
-- LocalStack simula S3 localmente para desarrollo.
+- LocalStack simula S3 localmente para desarrollo usando gresau/localstack-persist.
 - El bucket se crea automáticamente si no existe.
-- **Limitación de Persistencia**: En la versión gratuita de LocalStack, los datos no persisten entre reinicios de contenedores. Para persistencia permanente, hay que considerar LocalStack Pro.
+- **Persistencia**: Los datos persisten durante reinicios de contenedores, pero no entre sesiones completas de Docker. Para persistencia permanente, considerar LocalStack Pro.

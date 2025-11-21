@@ -9,7 +9,7 @@ Este proyecto implementa un servicio local que simula Amazon S3 utilizando Local
 - **Contenerización Completa:** Tanto el backend como el frontend están contenerizados, permitiendo despliegue con un solo comando `docker-compose up -d`.
 - **Layout Mejorado:** Interfaz de dos columnas (subida izquierda, lista derecha).
 - **Paginación:** Lista de archivos paginada para manejar grandes cantidades de archivos eficientemente.
-- **Persistencia Limitada:** Los datos no persisten entre reinicios completos de contenedores (limitación de LocalStack gratuita).
+- **Persistencia Mejorada:** Usando gresau/localstack-persist, los datos persisten durante reinicios de contenedores, pero no entre sesiones completas de Docker.
 
 ## Tecnologías Utilizadas
 
@@ -66,14 +66,21 @@ Durante el desarrollo del proyecto, realizamos pruebas exhaustivas para verifica
 - Verificamos si se creaban tablas en PostgreSQL.
 - Resultado: PostgreSQL funcionaba, pero LocalStack no utilizaba la DB; no se crearon tablas ni se guardaron datos.
 
+### Fase 5: Implementación de gresau/localstack-persist
+- Cambiamos la imagen de LocalStack a `gresau/localstack-persist:latest`, que incluye PostgreSQL integrado para persistencia.
+- Agregamos volúmenes adicionales para montar `./localstack-s3-data:/tmp/localstack-s3-storage` además del existente `./localstack-data:/opt/localstack/data`.
+- Levantamos los servicios y subimos archivos de prueba.
+- Probamos persistencia con `docker-compose restart` (funcionó) y con `docker-compose down` completo (no funcionó).
+- Resultado: Mejora la persistencia respecto a la versión gratuita estándar durante reinicios, pero no logra persistencia completa entre sesiones completas de Docker.
+
 ### Resultados Finales de las Pruebas
 - **Subida de Archivos**: Funciona correctamente durante la sesión activa.
-- **Persistencia de Metadatos**: No se mantiene entre reinicios completos.
-- **Persistencia de Archivos**: Los archivos no sobreviven a `docker-compose down`.
-- **Base de Datos**: No se utiliza por LocalStack en esta configuración.
+- **Persistencia con gresau/localstack-persist**: Mejora durante `docker-compose restart`, pero no persiste después de `docker-compose down`.
+- **Persistencia con LocalStack gratuita**: No se mantiene entre reinicios completos.
+- **Base de Datos Externa**: No se utiliza por LocalStack en esta configuración.
 
 ### Conclusión
-LocalStack versión 3.0 gratuita tiene limitaciones importantes en persistencia. Para un laboratorio académico como este, es suficiente para testing en sesiones activas, pero no garantiza persistencia permanente. Para producción o persistencia real, recomendaría LocalStack Pro.
+LocalStack gratuita y variantes como gresau/localstack-persist tienen limitaciones importantes en persistencia completa. Para un laboratorio académico como este, es suficiente para testing en sesiones activas, pero no garantiza persistencia permanente entre sesiones completas de Docker. Para producción o persistencia real, recomendaría LocalStack Pro.
 
 ---
 
@@ -152,7 +159,7 @@ Asegúrate de tener los siguientes archivos:
  - Los archivos se almacenan en el volumen de Docker. Para inspeccionar:
     ```bash
     # 1. Acceder al contenedor de LocalStack
-    docker exec -it sd2025-lab3-p3-localstack-1 bash
+    docker exec -it proyecto-s3-local-localstack-1 bash
 
     # 2. Configurar credenciales AWS dummy (solo primera vez)
     aws configure set aws_access_key_id test
@@ -220,6 +227,7 @@ Asegúrate de tener los siguientes archivos:
      ├── docker-compose.yml       # Configuración de servicios Docker
      ├── Dockerfile               # Imagen para la aplicación completa
      ├── localstack-data/         # Datos persistentes de LocalStack
+     ├── localstack-s3-data/      # Almacenamiento de archivos S3
      ├── Informe.md               # Esta documentación
      └── README.md                # Documentacion basica
      ```
